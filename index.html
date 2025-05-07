@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Pirate Plunder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            overflow: hidden;
+            touch-action: manipulation;
+            font-family: 'Courier New', monospace;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 2px 2px 2px #000;
+            z-index: 10;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        
+        .btn {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        
+        #titleScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #title {
+            font-size: 48px;
+            color: #f8c537;
+            text-shadow: 4px 4px 0 #a82b2b;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        #startBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        #startBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #levelScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #f8c537;
+        }
+        
+        #levelTitle {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        #levelDesc {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        #continueBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #deathScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #f8c537;
+        }
+        
+        #deathTitle {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        #restartBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div>Gold: <span id="gold">0</span> | Level: <span id="level">1</span></div>
+        <div>Health: <span id="health">100</span> | XP: <span id="xp">0</span>/100</div>
+    </div>
+    
+    <div id="controls">
+        <div class="btn" id="leftBtn">←</div>
+        <div class="btn" id="upBtn">↑</div>
+        <div class="btn" id="rightBtn">→</div>
+        <div class="btn" id="downBtn">↓</div>
+        <div class="btn" id="jumpBtn">JUMP</div>
+        <div class="btn" id="attackBtn">ATTACK</div>
+    </div>
+    
+    <div id="titleScreen">
+        <div id="title">PIXEL PIRATE PLUNDER</div>
+        <button id="startBtn">START ADVENTURE</button>
+    </div>
+    
+    <div id="levelScreen">
+        <div id="levelTitle">LEVEL <span id="levelNum">2</span></div>
+        <div id="levelDesc">You discover a jungle temple with vine traps and poison dart enemies!</div>
+        <button id="continueBtn">CONTINUE</button>
+    </div>
+    
+    <div id="deathScreen">
+        <div id="deathTitle">YARR, YE BE SUNK!</div>
+        <div id="deathStats"></div>
+        <button id="restartBtn">SAIL AGAIN</button>
+    </div>
+
+    
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const player = {
+    x: 100,
+    y: 300,
+    width: 50,
+    height: 50,
+    vy: 0,
+    gravity: 0.9,
+    jumpPower: -15,
+    grounded: false,
+    speed: 6,
+    color: "orange"
+  };
+
+  const keys = {};
+  let gameStarted = false;
+
+  function startGame() {
+    document.getElementById("startScreen").style.display = "none";
+    gameStarted = true;
+    gameLoop();
+  }
+
+  function update() {
+    player.vy += player.gravity;
+    player.y += player.vy;
+
+    if (player.y + player.height >= canvas.height - 50) {
+      player.y = canvas.height - 50 - player.height;
+      player.vy = 0;
+      player.grounded = true;
+    } else {
+      player.grounded = false;
+    }
+
+    if (keys["ArrowUp"] && player.grounded) {
+      player.vy = player.jumpPower;
+    }
+
+    if (keys["ArrowRight"]) {
+      player.x += player.speed;
+    }
+    if (keys["ArrowLeft"]) {
+      player.x -= player.speed;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Ground
+    ctx.fillStyle = "#006400";
+    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+    // Player
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+  }
+
+  function gameLoop() {
+    if (!gameStarted) return;
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  window.addEventListener("keydown", (e) => keys[e.key] = true);
+  window.addEventListener("keyup", (e) => keys[e.key] = false);
+
+  window.startGame = startGame;
+});
+</script>
+
+</body>
+</html>
