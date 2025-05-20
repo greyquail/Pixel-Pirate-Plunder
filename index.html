@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Pirate Plunder</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            overflow: hidden;
+            touch-action: manipulation;
+            font-family: 'Courier New', monospace;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 2px 2px 2px #000;
+            z-index: 10;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            padding: 0 20px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        
+        .btn {
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+        
+        #titleScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0f0c29, #302b63);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #title {
+            font-size: 48px;
+            color: #f8c537;
+            text-shadow: 4px 4px 0 #a82b2b;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        #startBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        #startBtn:active {
+            transform: scale(0.95);
+        }
+        
+        #levelScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #f8c537;
+        }
+        
+        #levelTitle {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        
+        #levelDesc {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        #continueBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #deathScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #f8c537;
+        }
+        
+        #deathTitle {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        #deathStats {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        #restartBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #victoryScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #f8c537;
+        }
+        
+        #victoryTitle {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #victoryStats {
+            font-size: 24px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        #playAgainBtn {
+            background: #f8c537;
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui">
+        <div>Gold: <span id="gold">0</span> | Level: <span id="level">1</span></div>
+        <div>Health: <span id="health">100</span> | XP: <span id="xp">0</span>/100</div>
+    </div>
+    
+    <div id="controls">
+        <div class="btn" id="leftBtn">←</div>
+        <div class="btn" id="upBtn">↑</div>
+        <div class="btn" id="rightBtn">→</div>
+        <div class="btn" id="downBtn">↓</div>
+        <div class="btn" id="jumpBtn">JUMP</div>
+        <div class="btn" id="attackBtn">ATTACK</div>
+    </div>
+    
+    <div id="titleScreen">
+        <div id="title">PIXEL PIRATE PLUNDER</div>
+        <button id="startBtn">START ADVENTURE</button>
+    </div>
+    
+    <div id="levelScreen">
+        <div id="levelTitle">LEVEL <span id="levelNum">1</span></div>
+        <div id="levelDesc">Begin your pirate adventure on the sandy shores!</div>
+        <button id="continueBtn">CONTINUE</button>
+    </div>
+    
+    <div id="deathScreen">
+        <div id="deathTitle">YARR, YE BE SUNK!</div>
+        <div id="deathStats"></div>
+        <button id="restartBtn">SAIL AGAIN</button>
+    </div>
+    
+    <div id="victoryScreen">
+        <div id="victoryTitle">TREASURE FOUND!</div>
+        <div id="victoryStats"></div>
+        <button id="playAgainBtn">PLAY AGAIN</button>
+    </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Canvas setup
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    // Game state
+    let gameStarted = false;
+    let currentLevel = 1;
+    let maxLevel = 3;
+    let gameOver = false;
+    let levelCompleted = false;
+    let score = 0;
+    let goldCollected = 0;
+    let xpGained = 0;
+    
+    // UI elements
+    const goldUI = document.getElementById("gold");
+    const levelUI = document.getElementById("level");
+    const healthUI = document.getElementById("health");
+    const xpUI = document.getElementById("xp");
+    const levelNumUI = document.getElementById("levelNum");
+    const levelDescUI = document.getElementById("levelDesc");
+    
+    // Player object
+    const player = {
+        x: 100,
+        y: 300,
+        width: 40,
+        height: 60,
+        vx: 0,
+        vy: 0,
+        speed: 5,
+        jumpPower: -15,
+        gravity: 0.7,
+        health: 100,
+        maxHealth: 100,
+        xp: 0,
+        maxXp: 100,
+        gold: 0,
+        isJumping: false,
+        isAttacking: false,
+        attackCooldown: 0,
+        attackRange: 60,
+        attackDamage: 25,
+        facingRight: true,
+        invulnerable: false,
+        invulnerableTimer: 0,
+        color: "#f8c537" // Gold color for our pirate
+    };
+    
+    // Level definitions
+    const levels = [
+        // Level 1: Beach
+        {
+            name: "Sandy Shores",
+            description: "Begin your pirate adventure on the sandy shores!",
+            background: "#87CEEB", // Sky blue
+            groundColor: "#F5DEB3", // Wheat/sand color
+            platformColor: "#8B4513", // Brown for wooden platforms
+            enemyColor: "#FF6347", // Tomato red for crabs
+            treasureColor: "#FFD700", // Gold
+            enemySpeed: 2,
+            enemyDamage: 10,
+            treasureValue: 5,
+            xpValue: 10,
+            victoryX: 3800
+        },
+        // Level 2: Jungle
+        {
+            name: "Jungle Temple",
+            description: "Navigate through a dense jungle with poisonous creatures!",
+            background: "#228B22", // Forest green
+            groundColor: "#556B2F", // Dark olive green
+            platformColor: "#8B4513", // Brown for wooden platforms
+            enemyColor: "#9370DB", // Medium purple for poison dart frogs
+            treasureColor: "#FFD700", // Gold
+            enemySpeed: 3,
+            enemyDamage: 15,
+            treasureValue: 10,
+            xpValue: 15,
+            victoryX: 4200
+        },
+        // Level 3: Pirate Ship
+        {
+            name: "Ghost Ship",
+            description: "Board the haunted pirate ship to find the legendary treasure!",
+            background: "#191970", // Midnight blue
+            groundColor: "#8B4513", // Brown for ship deck
+            platformColor: "#A0522D", // Sienna for wooden ship parts
+            enemyColor: "#7FFFD4", // Aquamarine for ghost pirates
+            treasureColor: "#FFD700", // Gold
+            enemySpeed: 4,
+            enemyDamage: 20,
+            treasureValue: 15,
+            xpValue: 20,
+            victoryX: 4600
+        }
+    ];
+    
+    // Game objects
+    let platforms = [];
+    let enemies = [];
+    let treasures = [];
+    let particles = [];
+    
+    // Camera
+    const camera = {
+        x: 0,
+        y: 0,
+        width: canvas.width,
+        height: canvas.height,
+        follow(target) {
+            // Center the camera on the player, but don't go beyond level boundaries
+            this.x = target.x - this.width / 3;
+            
+            // Keep camera within level bounds
+            this.x = Math.max(0, this.x);
+            this.x = Math.min(levels[currentLevel-1].victoryX - this.width + 100, this.x);
+        }
+    };
+    
+    // Input handling
+    const keys = {};
+    let touchControls = {
+        left: false,
+        right: false,
+        up: false,
+        down: false,
+        jump: false,
+        attack: false
+    };
+    
+    // Initialize level
+    function initLevel(levelNum) {
+        // Reset game objects
+        platforms = [];
+        enemies = [];
+        treasures = [];
+        particles = [];
+        
+        // Reset player position and state
+        player.x = 100;
+        player.y = 300;
+        player.vx = 0;
+        player.vy = 0;
+        player.health = player.maxHealth;
+        player.isJumping = false;
+        player.isAttacking = false;
+        
+        // Update UI
+        levelUI.textContent = levelNum;
+        healthUI.textContent = player.health;
+        xpUI.textContent = player.xp;
+        goldUI.textContent = player.gold;
+        
+        // Get current level data
+        const level = levels[levelNum - 1];
+        
+        // Create ground platform
+        platforms.push({
+            x: 0,
+            y: canvas.height - 50,
+            width: level.victoryX + 200,
+            height: 50,
+            color: level.groundColor
+        });
+        
+        // Create platforms based on level
+        const platformCount = 15 + (levelNum * 5);
+        for (let i = 0; i < platformCount; i++) {
+            // Create more complex platform arrangements for higher levels
+            let platformWidth = Math.random() * 150 + 100;
+            let platformHeight = 20;
+            let platformX = Math.random() * (level.victoryX - 500) + 300;
+            let platformY = Math.random() * (canvas.height - 200) + 150;
+            
+            // Ensure platforms aren't too close to each other
+            let validPosition = true;
+            for (let p of platforms) {
+                const distance = Math.sqrt(
+                    Math.pow(platformX - p.x, 2) + 
+                    Math.pow(platformY - p.y, 2)
+                );
+                if (distance < 100) {
+                    validPosition = false;
+                    break;
+                }
+            }
+            
+            if (validPosition) {
+                platforms.push({
+                    x: platformX,
+                    y: platformY,
+                    width: platformWidth,
+                    height: platformHeight,
+                    color: level.platformColor
+                });
+            }
+        }
+        
+        // Create enemies
+        const enemyCount = 10 + (levelNum * 3);
+        for (let i = 0; i < enemyCount; i++) {
+            let enemyX = Math.random() * (level.victoryX - 800) + 500;
+            let enemyY = 0;
+            let platformIndex = Math.floor(Math.random() * platforms.length);
+            let platform = platforms[platformIndex];
+            
+            // Place enemy on a platform
+            enemyY = platform.y - 40;
+            
+            enemies.push({
+                x: enemyX,
+                y: enemyY,
+                width: 40,
+                height: 40,
+                vx: level.enemySpeed * (Math.random() > 0.5 ? 1 : -1),
+                vy: 0,
+                health: 50 + (levelNum * 10),
+                damage: level.enemyDamage,
+                platform: platformIndex,
+                patrolDistance: platform.width - 40,
+                startX: enemyX,
+                color: level.enemyColor
+            });
+        }
+        
+        // Create treasures
+        const treasureCount = 15 + (levelNum * 5);
+        for (let i = 0; i < treasureCount; i++) {
+            let treasureX = Math.random() * (level.victoryX - 500) + 300;
+            let treasureY = Math.random() * (canvas.height - 200) + 100;
+            
+            treasures.push({
+                x: treasureX,
+                y: treasureY,
+                width: 20,
+                height: 20,
+                value: level.treasureValue,
+                xpValue: level.xpValue,
+                color: level.treasureColor,
+                collected: false,
+                pulseTime: Math.random() * Math.PI * 2
+            });
+        }
+        
+        // Create victory treasure chest at the end
+        treasures.push({
+            x: level.victoryX,
+            y: canvas.height - 100,
+            width: 50,
+            height: 50,
+            value: level.treasureValue * 10,
+            xpValue: level.xpValue * 10,
+            color: "#FF0000", // Red for the final treasure
+            collected: false,
+            isVictory: true,
+            pulseTime: 0
+        });
+        
+        // Show level screen
+        document.getElementById("levelScreen").style.display = "flex";
+        levelNumUI.textContent = levelNum;
+        levelDescUI.textContent = level.description;
+    }
+    
+    // Start game
+    function startGame() {
+        document.getElementById("titleScreen").style.display = "none";
+        gameStarted = true;
+        initLevel(currentLevel);
+    }
+    
+    // Continue to next level
+    function continueGame() {
+        document.getElementById("levelScreen").style.display = "none";
+        gameLoop();
+    }
+    
+    // Restart game
+    function restartGame() {
+        document.getElementById("deathScreen").style.display = "none";
+        player.health = player.maxHealth;
+        player.gold = 0;
+        player.xp = 0;
+        currentLevel = 1;
+        gameOver = false;
+        initLevel(currentLevel);
+        gameLoop();
+    }
+    
+    // Play again after victory
+    function playAgain() {
+        document.getElementById("victoryScreen").style.display = "none";
+        player.health = player.maxHealth;
+        player.gold = 0;
+        player.xp = 0;
+        currentLevel = 1;
+        gameOver = false;
+        initLevel(currentLevel);
+        gameLoop();
+    }
+    
+    // Complete level
+    function completeLevel() {
+        if (currentLevel < maxLevel) {
+            currentLevel++;
+            levelCompleted = true;
+            initLevel(currentLevel);
+        } else {
+            // Game completed
+            gameOver = true;
+            document.getElementById("victoryScreen").style.display = "flex";
+            document.getElementById("victoryTitle").textContent = "LEGENDARY TREASURE FOUND!";
+            document.getElementById("victoryStats").textContent = 
+                `You collected ${player.gold} gold and gained ${player.xp} XP!`;
+        }
+    }
+    
+    // Game over
+    function gameOverScreen() {
+        gameOver = true;
+        document.getElementById("deathScreen").style.display = "flex";
+        document.getElementById("deathStats").textContent = 
+            `You collected ${player.gold} gold and gained ${player.xp} XP!`;
+    }
+    
+    // Check collisions
+    function checkCollision(obj1, obj2) {
+        return obj1.x < obj2.x + obj2.width &&
+               obj1.x + obj1.width > obj2.x &&
+               obj1.y < obj2.y + obj2.height &&
+               obj1.y + obj1.height > obj2.y;
+    }
+    
+    // Create particles
+    function createParticles(x, y, count, color, speed) {
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * speed,
+                vy: (Math.random() - 0.5) * speed,
+                size: Math.random() * 5 + 2,
+                color: color,
+                life: Math.random() * 30 + 10
+            });
+        }
+    }
+    
+    // Update game state
+    function update() {
+        if (gameOver || levelCompleted) return;
+        
+        // Apply gravity
+        player.vy += player.gravity;
+        
+        // Handle player movement
+        if ((keys["ArrowLeft"] || keys["a"] || touchControls.left) && !player.isAttacking) {
+            player.vx = -player.speed;
+            player.facingRight = false;
+        } else if ((keys["ArrowRight"] || keys["d"] || touchControls.right) && !player.isAttacking) {
+            player.vx = player.speed;
+            player.facingRight = true;
+        } else {
+            player.vx = 0;
+        }
+        
+        // Handle jumping
+        if ((keys["ArrowUp"] || keys[" "] || keys["w"] || touchControls.jump) && !player.isJumping && !player.isAttacking) {
+            player.vy = player.jumpPower;
+            player.isJumping = true;
+            createParticles(player.x + player.width/2, player.y + player.height, 10, "#FFF", 3);
+        }
+        
+        // Handle attacking
+        if ((keys["z"] || keys["j"] || touchControls.attack) && !player.isAttacking && player.attackCooldown <= 0) {
+            player.isAttacking = true;
+            player.attackCooldown = 20; // 20 frames cooldown
+            
+            // Check for enemies in attack range
+            enemies.forEach(enemy => {
+                if (!enemy.defeated) {
+                    const attackX = player.facingRight ? 
+                        player.x + player.width : 
+                        player.x - player.attackRange;
+                    
+                    const attackWidth = player.attackRange;
+                    
+                    if (checkCollision({
+                        x: attackX,
+                        y: player.y,
+                        width: attackWidth,
+                        height: player.height
+                    }, enemy)) {
+                        enemy.health -= player.attackDamage;
+                        createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, 15, "#FF0000", 5);
+                        
+                        if (enemy.health <= 0) {
+                            enemy.defeated = true;
+                            player.xp += 20;
+                            xpUI.textContent = player.xp;
+                            
+                            // Level up if XP reaches max
+                            if (player.xp >= player.maxXp) {
+                                player.xp = 0;
+                                player.maxXp += 50;
+                                player.attackDamage += 5;
+                                player.maxHealth += 20;
+                                player.health = player.maxHealth;
+                                healthUI.textContent = player.health;
+                                xpUI.textContent = player.xp;
+                                createParticles(player.x + player.width/2, player.y + player.height/2, 30, "#FFFF00", 8);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update attack cooldown
+        if (player.attackCooldown > 0) {
+            player.attackCooldown--;
+        }
+        
+        // Reset attack state after a short time
+        if (player.isAttacking) {
+            setTimeout(() => {
+                player.isAttacking = false;
+            }, 200);
+        }
+        
+        // Update invulnerability timer
+        if (player.invulnerable) {
+            player.invulnerableTimer--;
+            if (player.invulnerableTimer <= 0) {
+                player.invulnerable = false;
+            }
+        }
+        
+        // Update player position
+        player.x += player.vx;
+        player.y += player.vy;
+        
+        // Check platform collisions
+        let onGround = false;
+        platforms.forEach(platform => {
+            if (player.vy > 0 && // Moving downward
+                player.y + player.height > platform.y &&
+                player.y < platform.y &&
+                player.x + player.width > platform.x &&
+                player.x < platform.x + platform.width) {
+                
+                player.y = platform.y - player.height;
+                player.vy = 0;
+                player.isJumping = false;
+                onGround = true;
+            }
+        });
+        
+        if (!onGround) {
+            player.isJumping = true;
+        }
+        
+        // Keep player within level bounds
+        player.x = Math.max(0, player.x);
+        player.x = Math.min(levels[currentLevel-1].victoryX + 100, player.x);
+        
+        // Check if player fell off the map
+        if (player.y > canvas.height) {
+            player.health = 0;
+            healthUI.textContent = player.health;
+            gameOverScreen();
+        }
+        
+        // Update enemies
+        enemies.forEach(enemy => {
+            if (!enemy.defeated) {
+                // Apply gravity
+                enemy.vy += player.gravity;
+                
+                // Move enemy
+                enemy.x += enemy.vx;
+                
+                // Platform collision
+                let platform = platforms[enemy.platform];
+                if (enemy.y + enemy.height > platform.y &&
+                    enemy.x + enemy.width > platform.x &&
+                    enemy.x < platform.x + platform.width) {
+                    
+                    enemy.y = platform.y - enemy.height;
+                    enemy.vy = 0;
+                }
+                
+                // Patrol behavior
+                if (enemy.x > enemy.startX + enemy.patrolDistance || 
+                    enemy.x < enemy.startX) {
+                    enemy.vx *= -1;
+                }
+                
+                // Update enemy position
+                enemy.y += enemy.vy;
+                
+                // Check collision with player
+                if (checkCollision(player, enemy) && !player.invulnerable) {
+                    player.health -= enemy.damage;
+                    healthUI.textContent = player.health;
+                    createParticles(player.x + player.width/2, player.y + player.height/2, 15, "#FF0000", 5);
+                    
+                    // Knockback
+                    player.vx = enemy.x < player.x ? 10 : -10;
+                    player.vy = -5;
+                    
+                    // Make player invulnerable for a short time
+                    player.invulnerable = true;
+                    player.invulnerableTimer = 60; // 60 frames = 1 second at 60fps
+                    
+                    if (player.health <= 0) {
+                        gameOverScreen();
+                    }
+                }
+            }
+        });
+        
+        // Update treasures
+        treasures.forEach(treasure => {
+            if (!treasure.collected) {
+                // Animate treasure
+                treasure.pulseTime += 0.05;
+                
+                // Check collision with player
+                if (checkCollision(player, treasure)) {
+                    treasure.collected = true;
+                    player.gold += treasure.value;
+                    player.xp += treasure.xpValue;
+                    goldUI.textContent = player.gold;
+                    xpUI.textContent = player.xp;
+                    createParticles(treasure.x + treasure.width/2, treasure.y + treasure.height/2, 20, "#FFD700", 5);
+                    
+                    // Check if this is the victory treasure
+                    if (treasure.isVictory) {
+                        completeLevel();
+                    }
+                    
+                    // Level up if XP reaches max
+                    if (player.xp >= player.maxXp) {
+                        player.xp = 0;
+                        player.maxXp += 50;
+                        player.attackDamage += 5;
+                        player.maxHealth += 20;
+                        player.health = player.maxHealth;
+                        healthUI.textContent = player.health;
+                        xpUI.textContent = player.xp;
+                        createParticles(player.x + player.width/2, player.y + player.height/2, 30, "#FFFF00", 8);
+                    }
+                }
+            }
+        });
+        
+        // Update particles
+        particles.forEach((particle, index) => {
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+            particle.life--;
+            
+            if (particle.life <= 0) {
+                particles.splice(index, 1);
+            }
+        });
+        
+        // Update camera
+        camera.follow(player);
+    }
+    
+    // Draw game
+    function draw() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw background
+        ctx.fillStyle = levels[currentLevel-1].background;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Save context for camera transformation
+        ctx.save();
+        ctx.translate(-camera.x, 0);
+        
+        // Draw platforms
+        platforms.forEach(platform => {
+            ctx.fillStyle = platform.color;
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        });
+        
+        // Draw treasures
+        treasures.forEach(treasure => {
+            if (!treasure.collected) {
+                ctx.fillStyle = treasure.color;
+                
+                // Pulse effect
+                const pulse = Math.sin(treasure.pulseTime) * 0.2 + 1;
+                const centerX = treasure.x + treasure.width / 2;
+                const centerY = treasure.y + treasure.height / 2;
+                
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.scale(pulse, pulse);
+                ctx.translate(-centerX, -centerY);
+                
+                if (treasure.isVictory) {
+                    // Draw treasure chest
+                    ctx.fillRect(treasure.x, treasure.y, treasure.width, treasure.height);
+                    ctx.fillStyle = "#8B4513";
+                    ctx.fillRect(treasure.x, treasure.y + treasure.height * 0.7, treasure.width, treasure.height * 0.3);
+                    ctx.fillStyle = "#FFD700";
+                    ctx.fillRect(treasure.x + treasure.width * 0.4, treasure.y + treasure.height * 0.4, treasure.width * 0.2, treasure.height * 0.3);
+                } else {
+                    // Draw coin
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, treasure.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = "#8B4513";
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+        });
+        
+        // Draw enemies
+        enemies.forEach(enemy => {
+            if (!enemy.defeated) {
+                ctx.fillStyle = enemy.color;
+                
+                // Draw enemy based on level
+                if (currentLevel === 1) {
+                    // Crab
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(enemy.x - 10, enemy.y + 10, 10, 5);
+                    ctx.fillRect(enemy.x + enemy.width, enemy.y + 10, 10, 5);
+                } else if (currentLevel === 2) {
+                    // Poison dart frog
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = "#000";
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width/2 - 8, enemy.y + enemy.height/2 - 8, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(enemy.x + enemy.width/2 + 8, enemy.y + enemy.height/2 - 8, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    // Ghost pirate
+                    ctx.globalAlpha = 0.7;
+                    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(enemy.x + 8, enemy.y + 10, 8, 8);
+                    ctx.fillRect(enemy.x + enemy.width - 16, enemy.y + 10, 8, 8);
+                }
+                
+                // Health bar
+                const healthPercent = enemy.health / (50 + (currentLevel * 10));
+                ctx.fillStyle = "#FF0000";
+                ctx.fillRect(enemy.x, enemy.y - 10, enemy.width, 5);
+                ctx.fillStyle = "#00FF00";
+                ctx.fillRect(enemy.x, enemy.y - 10, enemy.width * healthPercent, 5);
+            }
+        });
+        
+        // Draw player
+        if (player.invulnerable) {
+            // Flashing effect when invulnerable
+            if (Math.floor(Date.now() / 100) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+        }
+        
+        ctx.fillStyle = player.color;
+        
+        // Draw player as a pirate
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Draw player's face
+        ctx.fillStyle = "#000";
+        if (player.facingRight) {
+            ctx.fillRect(player.x + player.width - 15, player.y + 15, 5, 5); // Eye
+            ctx.fillRect(player.x + player.width - 25, player.y + 30, 15, 3); // Mouth
+        } else {
+            ctx.fillRect(player.x + 10, player.y + 15, 5, 5); // Eye
+            ctx.fillRect(player.x + 10, player.y + 30, 15, 3); // Mouth
+        }
+        
+        // Draw pirate hat
+        ctx.fillStyle = "#000";
+        ctx.fillRect(player.x - 5, player.y, player.width + 10, 10);
+        ctx.fillRect(player.x + 5, player.y - 15, player.width - 10, 15);
+        
+        // Draw attack animation
+        if (player.isAttacking) {
+            ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+            if (player.facingRight) {
+                ctx.fillRect(player.x + player.width, player.y, player.attackRange, player.height);
+            } else {
+                ctx.fillRect(player.x - player.attackRange, player.y, player.attackRange, player.height);
+            }
+        }
+        
+        ctx.globalAlpha = 1;
+        
+        // Draw particles
+        particles.forEach(particle => {
+            ctx.fillStyle = particle.color;
+            ctx.globalAlpha = particle.life / 40;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        ctx.globalAlpha = 1;
+        
+        // Draw level progress indicator
+        ctx.fillStyle = "#FFF";
+        ctx.fillRect(50, 50, levels[currentLevel-1].victoryX / 20, 10);
+        ctx.fillStyle = "#F00";
+        ctx.fillRect(50, 50, (player.x / levels[currentLevel-1].victoryX) * (levels[currentLevel-1].victoryX / 20), 10);
+        
+        // Restore context
+        ctx.restore();
+    }
+    
+    // Game loop
+    function gameLoop() {
+        if (!gameStarted || gameOver || levelCompleted) return;
+        
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // Event listeners
+    window.addEventListener("keydown", (e) => {
+        keys[e.key] = true;
+    });
+    
+    window.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+    });
+    
+    // Touch controls
+    document.getElementById("leftBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.left = true;
+    });
+    
+    document.getElementById("leftBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.left = false;
+    });
+    
+    document.getElementById("rightBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.right = true;
+    });
+    
+    document.getElementById("rightBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.right = false;
+    });
+    
+    document.getElementById("upBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.up = true;
+    });
+    
+    document.getElementById("upBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.up = false;
+    });
+    
+    document.getElementById("downBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.down = true;
+    });
+    
+    document.getElementById("downBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.down = false;
+    });
+    
+    document.getElementById("jumpBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.jump = true;
+    });
+    
+    document.getElementById("jumpBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.jump = false;
+    });
+    
+    document.getElementById("attackBtn").addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        touchControls.attack = true;
+    });
+    
+    document.getElementById("attackBtn").addEventListener("touchend", (e) => {
+        e.preventDefault();
+        touchControls.attack = false;
+    });
+    
+    // Mouse controls (for desktop)
+    document.getElementById("leftBtn").addEventListener("mousedown", () => {
+        touchControls.left = true;
+    });
+    
+    document.getElementById("leftBtn").addEventListener("mouseup", () => {
+        touchControls.left = false;
+    });
+    
+    document.getElementById("rightBtn").addEventListener("mousedown", () => {
+        touchControls.right = true;
+    });
+    
+    document.getElementById("rightBtn").addEventListener("mouseup", () => {
+        touchControls.right = false;
+    });
+    
+    document.getElementById("upBtn").addEventListener("mousedown", () => {
+        touchControls.up = true;
+    });
+    
+    document.getElementById("upBtn").addEventListener("mouseup", () => {
+        touchControls.up = false;
+    });
+    
+    document.getElementById("downBtn").addEventListener("mousedown", () => {
+        touchControls.down = true;
+    });
+    
+    document.getElementById("downBtn").addEventListener("mouseup", () => {
+        touchControls.down = false;
+    });
+    
+    document.getElementById("jumpBtn").addEventListener("mousedown", () => {
+        touchControls.jump = true;
+    });
+    
+    document.getElementById("jumpBtn").addEventListener("mouseup", () => {
+        touchControls.jump = false;
+    });
+    
+    document.getElementById("attackBtn").addEventListener("mousedown", () => {
+        touchControls.attack = true;
+    });
+    
+    document.getElementById("attackBtn").addEventListener("mouseup", () => {
+        touchControls.attack = false;
+    });
+    
+    // Window resize
+    window.addEventListener("resize", () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        camera.width = canvas.width;
+        camera.height = canvas.height;
+    });
+    
+    // Button event listeners
+    document.getElementById("startBtn").addEventListener("click", startGame);
+    document.getElementById("continueBtn").addEventListener("click", continueGame);
+    document.getElementById("restartBtn").addEventListener("click", restartGame);
+    document.getElementById("playAgainBtn").addEventListener("click", playAgain);
+    
+    // Initialize game
+    draw();
+});
+</script>
+
+</body>
+</html>
