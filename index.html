@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plumber's Quest</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #5c9a46;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: linear-gradient(#87ceeb 50%, #5c9a46 50%);
+            border: 2px solid #000;
+            overflow: hidden;
+        }
+        #player {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: url('https://via.placeholder.com/40x40/FF0000/000000?text=P') no-repeat;
+            bottom: 0;
+            left: 50px;
+        }
+        #coin, #enemy, .power-up {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+        }
+        #coin { background: yellow; }
+        #enemy { background: #8b0000; }
+        .mushroom { background: green; }
+        .fire-flower { background: orange; }
+        .star { background: yellow; border-radius: 50%; }
+        .hidden { display: none; }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+        }
+        .fireball {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: red;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="player"></div>
+        <div id="coin" style="left: 200px; top: 350px;"></div>
+        <div id="enemy" style="left: 400px; top: 350px;"></div>
+        <div class="power-up mushroom" style="left: 300px; top: 350px;"></div>
+        <div class="power-up fire-flower" style="left: 500px; top: 350px;"></div>
+        <div class="power-up star" style="left: 600px; top: 350px;"></div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const coin = document.getElementById('coin');
+        const enemy = document.getElementById('enemy');
+        const powerUps = document.querySelectorAll('.power-up');
+        const scoreDisplay = document.getElementById('score');
+        let score = 0;
+        let playerX = 50;
+        let isJumping = false;
+        let gameActive = true;
+        let powerUpActive = null;
+        let powerUpTimer = null;
+        let fireballs = [];
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    if (playerX > 0) playerX -= 10;
+                    break;
+                case 'ArrowRight':
+                    if (playerX < 760) playerX += 10;
+                    break;
+                case 'ArrowUp':
+                    if (!isJumping) jump();
+                    break;
+                case ' ':
+                    if (powerUpActive === 'fire') shootFireball();
+                    else action();
+                    break;
+            }
+            player.style.left = playerX + 'px';
+        });
+
+        function jump() {
+            isJumping = true;
+            let jumpHeight = 0;
+            const jumpInterval = setInterval(() => {
+                if (jumpHeight >= 100) {
+                    clearInterval(jumpInterval);
+                    fall();
+                } else {
+                    jumpHeight += 5;
+                    player.style.bottom = (parseInt(player.style.bottom) || 0) + 5 + 'px';
+                }
+            }, 20);
+        }
+
+        function fall() {
+            const fallInterval = setInterval(() => {
+                if (parseInt(player.style.bottom) <= 0) {
+                    clearInterval(fallInterval);
+                    player.style.bottom = '0px';
+                    isJumping = false;
+                } else {
+                    player.style.bottom = (parseInt(player.style.bottom) || 0) - 5 + 'px';
+                }
+            }, 20);
+        }
+
+        function action() {
+            if (checkCollision(coin)) {
+                score += 10;
+                scoreDisplay.textContent = `Score: ${score}`;
+                coin.style.left = Math.random() * 700 + 'px';
+                coin.style.top = '350px';
+            }
+            powerUps.forEach(powerUp => {
+                if (checkCollision(powerUp)) {
+                    activatePowerUp(powerUp.classList[1]);
+                    powerUp.style.left = Math.random() * 700 + 'px';
+                    powerUp.style.top = '350px';
+                }
+            });
+            if (checkCollision(enemy) && powerUpActive !== 'star') {
+                gameActive = false;
+                alert('Game Over! Score: ' + score);
+                location.reload();
+            }
+        }
+
+        function activatePowerUp(type) {
+            if (powerUpTimer) clearTimeout(powerUpTimer);
+            switch (type) {
+                case 'mushroom':
+                    player.style.width = '60px';
+                    player.style.height = '60px';
+                    score += 20;
+                    powerUpTimer = setTimeout(() => {
+                        player.style.width = '40px';
+                        player.style.height = '40px';
+                        powerUpActive = null;
+                    }, 5000);
+                    break;
+                case 'fire-flower':
+                    powerUpActive = 'fire';
+                    score += 30;
+                    powerUpTimer = setTimeout(() => {
+                        powerUpActive = null;
+                    }, 10000);
+                    break;
+                case 'star':
+                    powerUpActive = 'star';
+                    score += 50;
+                    powerUpTimer = setTimeout(() => {
+                        powerUpActive = null;
+                    }, 5000);
+                    break;
+            }
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+
+        function shootFireball() {
+            if (powerUpActive === 'fire') {
+                const fireball = document.createElement('div');
+                fireball.className = 'fireball';
+                fireball.style.left = (playerX + 20) + 'px';
+                fireball.style.bottom = '10px';
+                gameContainer.appendChild(fireball);
+                fireballs.push(fireball);
+                moveFireball(fireball);
+            }
+        }
+
+        function moveFireball(fireball) {
+            let fireballX = parseInt(fireball.style.left);
+            const moveInterval = setInterval(() => {
+                fireballX += 5;
+                fireball.style.left = fireballX + 'px';
+                if (fireballX > 800) {
+                    clearInterval(moveInterval);
+                    fireball.remove();
+                    fireballs = fireballs.filter(f => f !== fireball);
+                }
+                if (checkCollision(enemy, fireball)) {
+                    clearInterval(moveInterval);
+                    fireball.remove();
+                    fireballs = fireballs.filter(f => f !== fireball);
+                    enemy.style.left = Math.random() * 700 + 'px';
+                }
+            }, 20);
+        }
+
+        function checkCollision(target, fireball = null) {
+            const playerRect = player.getBoundingClientRect();
+            const targetRect = (fireball || target).getBoundingClientRect();
+            return !(playerRect.right < targetRect.left ||
+                     playerRect.left > targetRect.right ||
+                     playerRect.bottom < targetRect.top ||
+                     playerRect.top > targetRect.bottom);
+        }
+
+        setInterval(() => {
+            if (gameActive) {
+                let enemyX = parseInt(enemy.style.left) || 400;
+                enemyX -= 2;
+                if (enemyX < -20) enemyX = 820;
+                enemy.style.left = enemyX + 'px';
+            }
+        }, 20);
+    </script>
+</body>
+</html>
